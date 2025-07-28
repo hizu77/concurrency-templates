@@ -26,35 +26,17 @@ func main() {
 
 	started := make([]model.Order, 0, len(generated))
 	for order := range generated {
-		o, err := service.Start(ctx, order)
-		if err != nil {
-			logger.Error("service.Start", slog.Any("error", err))
-			os.Exit(-1)
-		}
-
-		started = append(started, o)
+		started = append(started, service.Start(ctx, order))
 	}
 
 	processed := make([]model.Order, 0, len(started))
 	for _, order := range started {
-		o, err := service.Process(ctx, order)
-		if err != nil {
-			logger.Error("service.Start", slog.Any("error", err))
-			os.Exit(-1)
-		}
-
-		processed = append(processed, o)
+		processed = append(processed, service.Process(ctx, order))
 	}
 
 	completed := make([]model.Order, 0, len(processed))
 	for _, order := range processed {
-		o, err := service.Complete(ctx, order)
-		if err != nil {
-			logger.Error("service.Start", slog.Any("error", err))
-			os.Exit(-1)
-		}
-
-		completed = append(completed, o)
+		completed = append(completed, service.Complete(ctx, order))
 	}
 
 	fmt.Println(time.Since(start).Seconds()) // 80 so bad
