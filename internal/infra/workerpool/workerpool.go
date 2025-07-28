@@ -46,3 +46,46 @@ func Start[T, R any](
 
 	return output
 }
+
+func StartWithPipeline[T, R any](
+	ctx context.Context,
+	input <-chan T,
+	transform func(t <-chan T) <-chan R,
+	workers int,
+) <-chan R {
+	output := make(chan R)
+	wg := &sync.WaitGroup{}
+
+	for range workers {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			localResult := transform(input)
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case v, ok := <-localResult:
+					if !ok {
+						return
+					}
+
+					select {
+					case <-ctx.Done():
+						return
+					case output <- v:
+					}
+				}
+			}
+		}()
+	}
+
+	go func() {
+		defer close(output)
+		wg.Wait()
+	}()
+
+	return output
+}
